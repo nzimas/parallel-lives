@@ -1,0 +1,11 @@
+.DS_Store
+.build/
+.swiftpm/
+DerivedData/
+dist/
+xcuserdata/
+*.xcuserstate
+
+# Build and release products remain untracked. The pinned Csound runtime under
+# Sources/VascularMac/Resources/Runtime is intentionally versioned so a clone can
+# reproduce the self-contained application bundle.
