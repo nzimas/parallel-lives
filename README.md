@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Assets/Brand/ParallelLives-Header.png" alt="ParallelLives" width="900">
+</p>
+
 # ParallelLives
 
 ParallelLives is an experimental electroacoustic instrument for macOS built

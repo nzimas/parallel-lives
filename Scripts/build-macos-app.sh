@@ -16,6 +16,9 @@ mkdir -p "$temporary_bundle/Contents/Resources"
 ditto "$binary_directory/Vascular" "$temporary_bundle/Contents/MacOS/ParallelLives"
 ditto "$project_directory/Packaging/Info.plist" "$temporary_bundle/Contents/Info.plist"
 ditto \
+    "$project_directory/Packaging/ParallelLives.icns" \
+    "$temporary_bundle/Contents/Resources/ParallelLives.icns"
+ditto \
     "$binary_directory/Vascular_VascularMac.bundle" \
     "$temporary_bundle/Contents/Resources/Vascular_VascularMac.bundle"
 

@@ -10,6 +10,8 @@
     <string>ParallelLives</string>
     <key>CFBundleIdentifier</key>
     <string>lv.absolute.vascular</string>
+    <key>CFBundleIconFile</key>
+    <string>ParallelLives</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
