@@ -493,6 +493,7 @@ final class InstrumentModel: ObservableObject {
         case .pressed(let pad, _):
             if let track = processorRandomizeTrack {
                 consumedAuxiliaryRows.insert(track)
+                editingTrack = nil
                 randomizeProcessor(at: pad, forTrack: track)
                 renderController()
                 return
@@ -620,7 +621,6 @@ final class InstrumentModel: ObservableObject {
                     && !destructiveEffectsViewOpen else { return }
             auxiliaryPressTimes[row] = .now
             consumedAuxiliaryRows.remove(row)
-            editingTrack = nil
             processorRandomizeTrack = row
             processorRandomizeLatched = false
             status = "TRACK \(row + 1) · SELECT AN UNLOCKED PROCESSOR TO RANDOMIZE"

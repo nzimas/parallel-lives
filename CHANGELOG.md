@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restored short-pressing the active track button to close its editor and return
+  to the main track matrix
 - Added track-button + processor-pad parameter randomization while preserving
   opcode family and position
 - Protected every processor inside a chain-locked prefix from randomization
