@@ -25,6 +25,18 @@ let second = factory.make(source: source, destination: destination, seed: 42)
 
 require(first.sourceFamily == second.sourceFamily, "source selection is not deterministic")
 require(first.processors == second.processors, "processor selection is not deterministic")
+let originalProcessor = first.processors[0]
+let randomizedProcessor = factory.rerandomize(originalProcessor, seed: 98_765)
+require(randomizedProcessor.id == originalProcessor.id,
+        "processor randomization changed module identity")
+require(randomizedProcessor.coordinate == originalProcessor.coordinate,
+        "processor randomization moved the module")
+require(randomizedProcessor.kind == originalProcessor.kind,
+        "processor randomization changed the opcode family")
+require(randomizedProcessor.seed != originalProcessor.seed,
+        "processor randomization retained the old parameter seed")
+require((0.34...0.9).contains(randomizedProcessor.intensity),
+        "processor randomization produced an unsafe intensity")
 let lockedGenerator = GeneratorLock(
     sourceSeed: first.sourceSeed,
     sourceFamily: first.sourceFamily,

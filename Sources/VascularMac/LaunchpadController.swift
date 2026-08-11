@@ -135,7 +135,8 @@ final class LaunchpadController: @unchecked Sendable {
         activeSceneSlot: Int?,
         generatorLockRows: Set<Int>,
         chainLockEndpoints: [Int: Int],
-        shiftHeld: Bool
+        shiftHeld: Bool,
+        processorRandomizeTrack: Int?
     ) {
         guard destination != 0 else { return }
 
@@ -365,7 +366,9 @@ final class LaunchpadController: @unchecked Sendable {
             return (LaunchpadGridMapping.note(for: pad), colours[pad] ?? RGB(r: 0, g: 0, b: 0))
         }
         lights += (0..<8).map { row in
-            let brightness = editingTrack == row ? 0.82 : 0.16
+            let brightness = processorRandomizeTrack == row
+                ? 0.98
+                : (editingTrack == row ? 0.82 : 0.16)
             return (LaunchpadGridMapping.auxiliaryNote(forRow: row), Self.colour(
                 hue: TrackPalette.hue(forRow: row), brightness: brightness
             ))

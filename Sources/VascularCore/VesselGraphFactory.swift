@@ -3,6 +3,29 @@ import Foundation
 public struct VesselGraphFactory: Sendable {
     public init() {}
 
+    /// Keeps a processor's identity and opcode family while drawing a fresh
+    /// parameter set. Stable identity lets the audio host replace only this
+    /// module rather than rebuilding the downstream graph.
+    public func rerandomize(_ node: ProcessorNode, seed: UInt64) -> ProcessorNode {
+        var random = SeededGenerator(seed: seed)
+        let intensity: Double
+        switch character(of: node.kind) {
+        case .destructive:
+            intensity = Double.random(in: 0.34...0.58, using: &random)
+        case .volatile:
+            intensity = Double.random(in: 0.46...0.72, using: &random)
+        default:
+            intensity = Double.random(in: 0.58...0.9, using: &random)
+        }
+        return ProcessorNode(
+            id: node.id,
+            coordinate: node.coordinate,
+            kind: node.kind,
+            intensity: intensity,
+            seed: random.next()
+        )
+    }
+
     public func make(
         source: PadCoordinate,
         destination: PadCoordinate,

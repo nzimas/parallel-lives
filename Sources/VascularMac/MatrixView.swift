@@ -80,12 +80,16 @@ struct MatrixView: View {
                     SurfaceButton(
                         label: "T\(row + 1)",
                         color: Color(hue: hue, saturation: 0.82, brightness: 0.94),
-                        active: model.editingTrack == row,
+                        active: model.editingTrack == row
+                            || model.processorRandomizeTrack == row,
                         enabled: !model.projectViewOpen
                             && !model.globalSceneViewOpen
                             && !model.masterEffectsViewOpen
                             && !model.destructiveEffectsViewOpen
-                            && !model.shiftHeld
+                            && !model.shiftHeld,
+                        longPressAction: {
+                            model.armProcessorRandomization(row: row)
+                        }
                     ) {
                         model.toggleTrackEditor(row: row)
                     }
@@ -450,27 +454,35 @@ private struct SurfaceButton: View {
     let color: Color
     let active: Bool
     var enabled = true
+    var longPressAction: (() -> Void)?
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            RoundedRectangle(cornerRadius: 9)
-                .fill(color.opacity(active ? 0.9 : (enabled ? 0.22 : 0.07)))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 9)
-                        .stroke(color.opacity(active ? 1 : 0.35), lineWidth: active ? 2 : 1)
-                }
-                .overlay {
-                    Text(label)
-                        .font(.system(size: 9, weight: .black, design: .monospaced))
-                        .foregroundStyle(Color.white.opacity(enabled ? 0.92 : 0.25))
-                }
-                .shadow(color: active ? color.opacity(0.8) : .clear, radius: 9)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
+        RoundedRectangle(cornerRadius: 9)
+            .fill(color.opacity(active ? 0.9 : (enabled ? 0.22 : 0.07)))
+            .overlay {
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(color.opacity(active ? 1 : 0.35), lineWidth: active ? 2 : 1)
+            }
+            .overlay {
+                Text(label)
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(enabled ? 0.92 : 0.25))
+            }
+            .shadow(color: active ? color.opacity(0.8) : .clear, radius: 9)
+            .contentShape(RoundedRectangle(cornerRadius: 9))
+            .onTapGesture {
+                if enabled { action() }
+            }
+            .onLongPressGesture(minimumDuration: 0.48) {
+                if enabled { longPressAction?() }
+            }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityLabel(label)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction {
+            if enabled { action() }
+        }
     }
 }
 

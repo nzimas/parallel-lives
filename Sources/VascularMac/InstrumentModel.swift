@@ -11,6 +11,7 @@ final class InstrumentModel: ObservableObject {
     @Published private(set) var controllerStatus = "LAUNCHPAD · SEARCHING"
     @Published private(set) var hubPulseBright = false
     @Published private(set) var editingTrack: Int?
+    @Published private(set) var processorRandomizeTrack: Int?
     @Published private(set) var trackVolumes = Array(repeating: TrackMixer.defaultVolume, count: 8)
     @Published private(set) var trackPans = Array(repeating: TrackMixer.defaultPan, count: 8)
     @Published private(set) var trackSends = Array(repeating: TrackSendLevels.zero, count: 8)
@@ -37,6 +38,8 @@ final class InstrumentModel: ObservableObject {
     private var launchpadSource: PadCoordinate?
     private var longPressTask: Task<Void, Never>?
     private var auxiliaryPressTimes: [Int: ContinuousClock.Instant] = [:]
+    private var consumedAuxiliaryRows: Set<Int> = []
+    private var processorRandomizeLatched = false
     private var scenePressTimes: [Int: ContinuousClock.Instant] = [:]
     private var sceneBank = TrackSceneBank()
     private var sceneRecallGeneration = Array(repeating: UInt64(0), count: 8)
@@ -112,6 +115,14 @@ final class InstrumentModel: ObservableObject {
 
     func tap(_ pad: PadCoordinate) {
         defer { renderController() }
+        if let track = processorRandomizeTrack {
+            randomizeProcessor(at: pad, forTrack: track)
+            if processorRandomizeLatched {
+                processorRandomizeTrack = nil
+                processorRandomizeLatched = false
+            }
+            return
+        }
         if shiftHeld {
             awakenedPad = nil
             if pad.column == 0 {
@@ -291,6 +302,9 @@ final class InstrumentModel: ObservableObject {
               !destructiveEffectsViewOpen,
               !shiftHeld else { return }
         longPressTask?.cancel()
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         scenePressTimes.removeAll()
         launchpadSource = nil
         launchpadPadsDown.removeAll()
@@ -305,12 +319,30 @@ final class InstrumentModel: ObservableObject {
         renderController()
     }
 
+    func armProcessorRandomization(row: Int) {
+        guard (0..<PadCoordinate.matrixSize).contains(row),
+              !projectViewOpen,
+              !globalSceneViewOpen,
+              !masterEffectsViewOpen,
+              !destructiveEffectsViewOpen,
+              !shiftHeld else { return }
+        editingTrack = nil
+        awakenedPad = nil
+        processorRandomizeTrack = row
+        processorRandomizeLatched = true
+        status = "TRACK \(row + 1) · SELECT AN UNLOCKED PROCESSOR TO RANDOMIZE"
+        renderController()
+    }
+
     func toggleShiftLatch() {
         setShiftHeld(!shiftHeld)
     }
 
     func toggleProjectView() {
         shiftHeld = false
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -329,6 +361,9 @@ final class InstrumentModel: ObservableObject {
 
     func toggleMasterEffectsView() {
         shiftHeld = false
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -349,6 +384,9 @@ final class InstrumentModel: ObservableObject {
 
     func toggleDestructiveEffectsView() {
         shiftHeld = false
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -369,6 +407,9 @@ final class InstrumentModel: ObservableObject {
 
     func toggleGlobalSceneView() {
         shiftHeld = false
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -450,6 +491,12 @@ final class InstrumentModel: ObservableObject {
             toggleGlobalSceneView()
 
         case .pressed(let pad, _):
+            if let track = processorRandomizeTrack {
+                consumedAuxiliaryRows.insert(track)
+                randomizeProcessor(at: pad, forTrack: track)
+                renderController()
+                return
+            }
             if destructiveEffectsViewOpen {
                 adjustDestructiveEffects(with: pad)
                 renderController()
@@ -572,11 +619,25 @@ final class InstrumentModel: ObservableObject {
             guard !projectViewOpen && !globalSceneViewOpen && !masterEffectsViewOpen
                     && !destructiveEffectsViewOpen else { return }
             auxiliaryPressTimes[row] = .now
+            consumedAuxiliaryRows.remove(row)
+            editingTrack = nil
+            processorRandomizeTrack = row
+            processorRandomizeLatched = false
+            status = "TRACK \(row + 1) · SELECT AN UNLOCKED PROCESSOR TO RANDOMIZE"
+            renderController()
 
         case .auxiliaryReleased(let row):
-            guard let start = auxiliaryPressTimes.removeValue(forKey: row),
-                  start.duration(to: .now) < .milliseconds(480) else { return }
-            toggleTrackEditor(row: row)
+            guard let start = auxiliaryPressTimes.removeValue(forKey: row) else { return }
+            processorRandomizeTrack = nil
+            processorRandomizeLatched = false
+            if consumedAuxiliaryRows.remove(row) != nil {
+                renderController()
+            } else if start.duration(to: .now) < .milliseconds(480) {
+                toggleTrackEditor(row: row)
+            } else {
+                status = "TRACK MATRIX"
+                renderController()
+            }
 
         case .shiftPressed:
             setShiftHeld(true)
@@ -587,6 +648,9 @@ final class InstrumentModel: ObservableObject {
     }
 
     private func setShiftHeld(_ held: Bool) {
+        processorRandomizeTrack = nil
+        processorRandomizeLatched = false
+        consumedAuxiliaryRows.removeAll()
         shiftHeld = held
         if held {
             projectViewOpen = false
@@ -643,6 +707,52 @@ final class InstrumentModel: ObservableObject {
         } else {
             status = "TRACK \(row + 1) · \(displayName(root.sourceFamily)) LOCKED"
         }
+    }
+
+    private func randomizeProcessor(at pad: PadCoordinate, forTrack track: Int) {
+        guard pad.row == track else {
+            status = "TRACK \(track + 1) · SELECT A PROCESSOR ON THIS TRACK"
+            return
+        }
+        guard pad.column > 0 else {
+            status = "TRACK \(track + 1) · THE GENERATOR IS NOT A PROCESSOR"
+            return
+        }
+        if let lock = session.chainLocks[track], pad.column <= lock.endpointColumn {
+            status = "TRACK \(track + 1) · PAD \(pad.column + 1) IS CHAIN-LOCKED"
+            return
+        }
+        guard let vesselIndex = session.vessels.firstIndex(where: { vessel in
+            vessel.source.row == track && vessel.processors.contains { $0.coordinate == pad }
+        }), let processorIndex = session.vessels[vesselIndex].processors.firstIndex(where: {
+            $0.coordinate == pad
+        }) else {
+            status = "TRACK \(track + 1) · NO PROCESSOR AT PAD \(pad.column + 1)"
+            return
+        }
+
+        let vessel = session.vessels[vesselIndex]
+        let current = vessel.processors[processorIndex]
+        let replacement = graphFactory.rerandomize(current, seed: session.drawSeed())
+        var processors = vessel.processors
+        processors[processorIndex] = replacement
+        session.vessels[vesselIndex] = VesselGraph(
+            id: vessel.id,
+            source: vessel.source,
+            destination: vessel.destination,
+            seed: vessel.seed,
+            sourceSeed: vessel.sourceSeed,
+            sourceFundamentalHz: vessel.sourceFundamentalHz,
+            rootVesselID: vessel.rootVesselID,
+            sourceFamily: vessel.sourceFamily,
+            processors: processors,
+            hasAuxiliaryGenerator: vessel.hasAuxiliaryGenerator,
+            parentVesselIDs: vessel.parentVesselIDs
+        )
+        markTrackDirty(track)
+        selectedVesselID = vessel.id
+        status = "TRACK \(track + 1) · PAD \(pad.column + 1) \(current.kind.rawValue.uppercased()) RANDOMIZED"
+        synchronizeAudio()
     }
 
     private func toggleChainLock(row: Int, endpoint: PadCoordinate) {
@@ -1241,7 +1351,8 @@ final class InstrumentModel: ObservableObject {
             activeSceneSlot: editingTrack.flatMap { activeSceneSlots[$0] },
             generatorLockRows: Set(session.generatorLocks.keys),
             chainLockEndpoints: session.chainLocks.mapValues(\.endpointColumn),
-            shiftHeld: shiftHeld
+            shiftHeld: shiftHeld,
+            processorRandomizeTrack: processorRandomizeTrack
         )
     }
 

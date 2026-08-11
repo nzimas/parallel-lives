@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Added track-button + processor-pad parameter randomization while preserving
+  opcode family and position
+- Protected every processor inside a chain-locked prefix from randomization
+- Added one-shot long-press trackpad access and targeted processor replacement
+  without rebuilding the downstream graph
+
 ## 2026.8.11
 
 - Adopted calendar versioning to reflect ParallelLives as stable software rather

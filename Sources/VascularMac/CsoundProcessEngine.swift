@@ -25,6 +25,9 @@ actor CsoundProcessEngine: AudioEngine {
         let inputBuses: [Int]
         let outputBus: Int
         let fundamentalHz: Double
+        let kind: ProcessorKind
+        let intensity: Double
+        let seed: UInt64
     }
 
     private struct OutputRuntime {
@@ -104,7 +107,10 @@ actor CsoundProcessEngine: AudioEngine {
             if let current = processorStates[stage.node.id],
                current.inputBuses == stage.inputBuses,
                current.outputBus == stage.outputBus,
-               current.fundamentalHz == stage.fundamentalHz {
+               current.fundamentalHz == stage.fundamentalHz,
+               current.kind == stage.node.kind,
+               current.intensity == stage.node.intensity,
+               current.seed == stage.node.seed {
                 continue
             }
             if let current = processorStates[stage.node.id] {
@@ -262,7 +268,10 @@ actor CsoundProcessEngine: AudioEngine {
             processorVoice: voice,
             inputBuses: stage.inputBuses,
             outputBus: stage.outputBus,
-            fundamentalHz: stage.fundamentalHz
+            fundamentalHz: stage.fundamentalHz,
+            kind: stage.node.kind,
+            intensity: stage.node.intensity,
+            seed: stage.node.seed
         )
     }
 
