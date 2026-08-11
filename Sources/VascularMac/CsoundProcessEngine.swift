@@ -30,6 +30,13 @@ actor CsoundProcessEngine: AudioEngine {
         let seed: UInt64
     }
 
+    private struct SourceRuntime {
+        let voice: String
+        let family: SourceFamily
+        let sourceSeed: UInt64
+        let fundamentalHz: Double
+    }
+
     private struct OutputRuntime {
         let voice: String
         let bus: Int
@@ -37,7 +44,7 @@ actor CsoundProcessEngine: AudioEngine {
     }
 
     private var host: EmbeddedCsoundHost?
-    private var rootVoices: [VesselGraph.ID: String] = [:]
+    private var rootVoices: [VesselGraph.ID: SourceRuntime] = [:]
     private var rootBuses: [VesselGraph.ID: Int] = [:]
     private var nodeBuses: [ProcessorNode.ID: Int] = [:]
     private var processorStates: [ProcessorNode.ID: ProcessorRuntime] = [:]
@@ -74,7 +81,16 @@ actor CsoundProcessEngine: AudioEngine {
             uniqueKeysWithValues: roots.map { ($0.id, $0.sourceFundamentalHz) }
         )
         let liveRootIDs = Set(roots.map(\.id))
-        for root in roots where rootVoices[root.id] == nil {
+        for root in roots {
+            if let current = rootVoices[root.id],
+               current.family == root.sourceFamily,
+               current.sourceSeed == root.sourceSeed,
+               current.fundamentalHz == root.sourceFundamentalHz {
+                continue
+            }
+            if let current = rootVoices[root.id] {
+                try? stop(current.voice)
+            }
             try activateSource(root)
         }
 
@@ -165,8 +181,8 @@ actor CsoundProcessEngine: AudioEngine {
         }
 
         for rootID in Array(rootVoices.keys) where !liveRootIDs.contains(rootID) {
-            if let voice = rootVoices.removeValue(forKey: rootID) {
-                try? stop(voice, after: retiredGraphDelay)
+            if let source = rootVoices.removeValue(forKey: rootID) {
+                try? stop(source.voice, after: retiredGraphDelay)
             }
             if let bus = rootBuses.removeValue(forKey: rootID) {
                 recycleBus(bus, after: retiredGraphDelay + 0.08)
@@ -247,7 +263,12 @@ actor CsoundProcessEngine: AudioEngine {
             String(bus),
         ]
         try send(fields.joined(separator: " ") + "\n")
-        rootVoices[root.id] = voice
+        rootVoices[root.id] = SourceRuntime(
+            voice: voice,
+            family: root.sourceFamily,
+            sourceSeed: root.sourceSeed,
+            fundamentalHz: root.sourceFundamentalHz
+        )
     }
 
     private func activateProcessor(_ stage: StageSpec) throws -> ProcessorRuntime {
@@ -340,7 +361,7 @@ actor CsoundProcessEngine: AudioEngine {
         for state in processorStates.values {
             try? stop(state.processorVoice, after: downstreamDelay)
         }
-        for voice in rootVoices.values { try? stop(voice, after: downstreamDelay) }
+        for source in rootVoices.values { try? stop(source.voice, after: downstreamDelay) }
         outputStates.removeAll()
         processorStates.removeAll()
         rootVoices.removeAll()
@@ -474,7 +495,7 @@ actor CsoundProcessEngine: AudioEngine {
                     "processingArchetype": processingArchetype(for: $0.sourceSeed),
                     "fundamentalHz": $0.sourceFundamentalHz,
                     "bus": rootBuses[$0.id] ?? -1,
-                    "voice": rootVoices[$0.id] ?? "missing",
+                    "voice": rootVoices[$0.id]?.voice ?? "missing",
                 ] as [String: Any]
             },
             "processorCount": stages.count,

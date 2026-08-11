@@ -130,15 +130,29 @@ on that row. The opcode family and its position remain unchanged, while its
 intensity, modulation identity, and internal parameter seed are regenerated.
 You may randomize several processors before releasing the hardware track button.
 
+The same gesture on an unlocked generator pad regenerates its internal voicing
+parameters while preserving the synthesis family and harmonic fundamental. A
+generator lock prevents this operation; a chain lock necessarily protects its
+generator as well.
+
 On the macOS trackpad surface, long-press T1–T8 to arm the corresponding track,
 then click one processor pad. This software gesture is one-shot and disarms
 after the pad is selected.
 
 Pads inside a chain-locked prefix cannot be randomized. The status line reports
-the rejection without altering the locked module. Generator pads, empty pads,
-and pads belonging to another track are likewise ignored. A successful
-randomization changes the current machine state and can subsequently be captured
-in a track scene, global scene, or project.
+the rejection without altering the locked module. Empty pads and pads belonging
+to another track are likewise ignored. A successful randomization changes the
+current machine state and can subsequently be captured in a track scene, global
+scene, or project.
+
+### Matrix module labels
+
+Every active generator and processor pad in the macOS track matrix displays a
+compact module name. Labels such as **KARPLUS**, **PREP STR**, **FILTER**,
+**V DELAY**, **FREEZE**, and **RING MOD** identify the synthesis or processing
+family without requiring selection. Longer names use readable abbreviations or
+two lines so they remain inside the pad. Editor pages continue to display their
+control and slot labels instead.
 
 ## 7. Track editor
 

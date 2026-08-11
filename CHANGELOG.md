@@ -7,6 +7,9 @@
 - Protected every processor inside a chain-locked prefix from randomization
 - Added one-shot long-press trackpad access and targeted processor replacement
   without rebuilding the downstream graph
+- Extended the gesture to unlocked generators while preserving synthesis family,
+  harmonic fundamental, and the existing processor chain
+- Added compact readable generator and processor names to active macOS matrix pads
 
 ## 2026.8.11
 

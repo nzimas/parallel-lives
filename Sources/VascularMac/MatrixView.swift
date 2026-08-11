@@ -377,7 +377,7 @@ struct MatrixView: View {
         if model.projectViewOpen {
             return ProjectGrid.slot(for: pad).map { "P\($0 + 1)" }
         }
-        guard model.editingTrack != nil else { return nil }
+        guard model.editingTrack != nil else { return moduleLabel(for: pad) }
         if let slot = TrackMixer.sceneSlot(for: pad) {
             return "S\(slot + 1)"
         }
@@ -391,6 +391,57 @@ struct MatrixView: View {
         case TrackMixer.panPadRow: "PAN"
         case TrackMixer.volumePadRow: "VOL"
         default: nil
+        }
+    }
+
+    private func moduleLabel(for pad: PadCoordinate) -> String? {
+        if pad.column == 0,
+           let root = model.session.vessels.first(where: {
+               $0.parentVesselIDs.isEmpty && $0.source == pad
+           }) {
+            return switch root.sourceFamily {
+            case .granularCloud: "GRANULAR"
+            case .spectralResidue: "SPECTRAL"
+            case .stochasticImpulses: "STOCH"
+            case .resonantBody: "RES BODY"
+            case .feedbackExciter: "FEEDBACK"
+            case .recursiveOscillator: "RECURSIVE"
+            case .pulsarTrain: "PULSAR"
+            case .frequencyModulation: "FM"
+            case .waveTerrain: "TERRAIN"
+            case .additiveCluster: "ADDITIVE"
+            case .noiseBands: "NOISE BAND"
+            case .resonantSwarm: "SWARM"
+            case .karplusStrong: "KARPLUS"
+            case .preparedString: "PREP STR"
+            case .struckPlate: "PLATE"
+            case .struckMembrane: "MEMBRANE"
+            case .bowedBody: "BOWED"
+            case .reedBore: "REED"
+            case .glassBowl: "GLASS"
+            case .woodenBody: "WOOD"
+            }
+        }
+        guard let processor = model.session.vessels
+            .filter({ $0.source.row == pad.row })
+            .flatMap(\.processors)
+            .first(where: { $0.coordinate == pad }) else { return nil }
+        return switch processor.kind {
+        case .filterBank: "FILTER"
+        case .granulator: "GRAN"
+        case .variableDelay: "V DELAY"
+        case .animatedReverb: "REVERB"
+        case .spectralFreeze: "FREEZE"
+        case .waveshaper: "SHAPER"
+        case .overdrive: "DRIVE"
+        case .bitCrusher: "CRUSH"
+        case .convolution: "CONVOLVE"
+        case .resonatorBank: "RESONATE"
+        case .ringModulator: "RING MOD"
+        case .diffuser: "DIFFUSE"
+        case .phaser: "PHASER"
+        case .flanger: "FLANGER"
+        case .controlledFeedback: "FEEDBACK"
         }
     }
 
@@ -523,6 +574,10 @@ private struct PadView: View {
                     Text(controlLabel)
                         .font(.system(size: 8, weight: .black, design: .monospaced))
                         .foregroundStyle(Color.white.opacity(0.82))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.55)
+                        .padding(4)
                 }
             }
             .scaleEffect(pressing ? 0.92 : 1)
@@ -538,7 +593,10 @@ private struct PadView: View {
                 }
             )
             .animation(.easeInOut(duration: 0.2), value: state)
-            .accessibilityLabel("Pad \(coordinate.index + 1)")
+            .accessibilityLabel(
+                controlLabel.map { "Pad \(coordinate.index + 1), \($0)" }
+                    ?? "Pad \(coordinate.index + 1)"
+            )
             .accessibilityHint("Long press a track source or endpoint; select a pad to its right")
     }
 

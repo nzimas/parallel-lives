@@ -714,8 +714,8 @@ final class InstrumentModel: ObservableObject {
             status = "TRACK \(track + 1) · SELECT A PROCESSOR ON THIS TRACK"
             return
         }
-        guard pad.column > 0 else {
-            status = "TRACK \(track + 1) · THE GENERATOR IS NOT A PROCESSOR"
+        if pad.column == 0 {
+            randomizeGenerator(row: track)
             return
         }
         if let lock = session.chainLocks[track], pad.column <= lock.endpointColumn {
@@ -752,6 +752,40 @@ final class InstrumentModel: ObservableObject {
         markTrackDirty(track)
         selectedVesselID = vessel.id
         status = "TRACK \(track + 1) · PAD \(pad.column + 1) \(current.kind.rawValue.uppercased()) RANDOMIZED"
+        synchronizeAudio()
+    }
+
+    private func randomizeGenerator(row: Int) {
+        if session.generatorLocks[row] != nil || session.chainLocks[row] != nil {
+            status = "TRACK \(row + 1) · GENERATOR IS LOCKED"
+            return
+        }
+        guard let root = session.vessels.first(where: {
+            $0.parentVesselIDs.isEmpty && $0.source.row == row
+        }) else {
+            status = "TRACK \(row + 1) · NO GENERATOR TO RANDOMIZE"
+            return
+        }
+        let newSourceSeed = session.drawSeed()
+        session.vessels = session.vessels.map { vessel in
+            guard vessel.source.row == row else { return vessel }
+            return VesselGraph(
+                id: vessel.id,
+                source: vessel.source,
+                destination: vessel.destination,
+                seed: vessel.seed,
+                sourceSeed: newSourceSeed,
+                sourceFundamentalHz: vessel.sourceFundamentalHz,
+                rootVesselID: vessel.rootVesselID,
+                sourceFamily: vessel.sourceFamily,
+                processors: vessel.processors,
+                hasAuxiliaryGenerator: vessel.hasAuxiliaryGenerator,
+                parentVesselIDs: vessel.parentVesselIDs
+            )
+        }
+        markTrackDirty(row)
+        selectedVesselID = root.id
+        status = "TRACK \(row + 1) · \(displayName(root.sourceFamily)) GENERATOR RANDOMIZED"
         synchronizeAudio()
     }
 
