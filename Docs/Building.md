@@ -61,8 +61,8 @@ sample jumps, silent source families, and truncated return tails.
 mkdir -p dist/releases
 ditto -c -k --sequesterRsrc --keepParent \
   dist/ParallelLives.app \
-  dist/releases/ParallelLives-0.1.0-macOS-arm64.zip
-shasum -a 256 dist/releases/ParallelLives-0.1.0-macOS-arm64.zip
+  dist/releases/ParallelLives-2026.8.11-macOS-arm64.zip
+shasum -a 256 dist/releases/ParallelLives-2026.8.11-macOS-arm64.zip
 ```
 
 The ZIP, not the bare directory, is uploaded as the GitHub release asset. After
@@ -84,10 +84,15 @@ on the final artifact.
 
 ## Versioning
 
-The public version is set in `Packaging/Info.plist` through
-`CFBundleShortVersionString` and `CFBundleVersion`. Release tags use `vX.Y.Z`.
-Project archive format versions are independent and live in
-`ProjectState.currentFormatVersion`.
+ParallelLives uses calendar versions in `YYYY.M.D` form. The public version and
+build version are set in `Packaging/Info.plist` through
+`CFBundleShortVersionString` and `CFBundleVersion`; release tags use the matching
+`vYYYY.M.D` form. Publish at most one stable release per calendar day. Internal
+builds made on the same day do not receive public tags.
+
+Calendar versions describe when a stable instrument build was released and do
+not imply prototype status. Project archive format versions are independent and
+live in `ProjectState.currentFormatVersion`.
 
 ## Third-party compliance
 

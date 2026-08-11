@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.8.11
+
+- Adopted calendar versioning to reflect ParallelLives as stable software rather
+  than an early pre-1.0 prototype
+- Consolidates the complete trackpad control surface, immediate physical-model
+  onsets, bundled Csound runtime, project and scene handling, locks, mixer, and
+  parameterized shared effects
+- Supersedes the earlier `0.1.x` release labels; those tags remain as historical
+  records only
+
 ## 0.1.2 — 2026-08-11
 
 - Guaranteed an immediate onset excitation for sparse stochastic, Karplus–Strong,
