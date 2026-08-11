@@ -14,15 +14,86 @@ struct MatrixView: View {
         ZStack {
             Color(red: 0.025, green: 0.035, blue: 0.04).ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: 14) {
                 header
-                matrix
+                controlSurface
                 footer
             }
-            .padding(28)
+            .padding(20)
         }
         .preferredColorScheme(.dark)
         .onReceive(hubTimer) { _ in model.advanceHubPulse() }
+    }
+
+    private var controlSurface: some View {
+        GeometryReader { geometry in
+            let matrixSize = max(
+                1,
+                min(geometry.size.width - 58, geometry.size.height - 48)
+            )
+            VStack(spacing: 10) {
+                HStack(spacing: 10) {
+                    topButtonRow.frame(width: matrixSize)
+                    Color.clear.frame(width: 48, height: 38)
+                }
+                HStack(alignment: .top, spacing: 10) {
+                    matrix.frame(width: matrixSize, height: matrixSize)
+                    trackButtonRail.frame(height: matrixSize)
+                }
+            }
+            .frame(width: matrixSize + 58, height: matrixSize + 48)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+        }
+    }
+
+    private var topButtonRow: some View {
+        HStack(spacing: 10) {
+            SurfaceButton(label: "PROJ", color: .cyan, active: model.projectViewOpen) {
+                model.toggleProjectView()
+            }
+            SurfaceButton(label: "SPACE", color: .blue, active: model.masterEffectsViewOpen) {
+                model.toggleMasterEffectsView()
+            }
+            SurfaceButton(label: "TEXT", color: .orange, active: model.destructiveEffectsViewOpen) {
+                model.toggleDestructiveEffectsView()
+            }
+            SurfaceButton(label: "SCENE", color: .purple, active: model.globalSceneViewOpen) {
+                model.toggleGlobalSceneView()
+            }
+            ForEach(0..<3, id: \.self) { _ in
+                SurfaceButton(label: "—", color: .gray, active: false, enabled: false) {}
+            }
+            SurfaceButton(label: "SHIFT", color: .white, active: model.shiftHeld) {
+                model.toggleShiftLatch()
+            }
+        }
+        .frame(height: 38)
+    }
+
+    private var trackButtonRail: some View {
+        GeometryReader { geometry in
+            let spacing = 10.0
+            let height = (geometry.size.height - spacing * 7) / 8
+            VStack(spacing: spacing) {
+                ForEach(0..<8, id: \.self) { row in
+                    let hue = TrackPalette.hue(forRow: row)
+                    SurfaceButton(
+                        label: "T\(row + 1)",
+                        color: Color(hue: hue, saturation: 0.82, brightness: 0.94),
+                        active: model.editingTrack == row,
+                        enabled: !model.projectViewOpen
+                            && !model.globalSceneViewOpen
+                            && !model.masterEffectsViewOpen
+                            && !model.destructiveEffectsViewOpen
+                            && !model.shiftHeld
+                    ) {
+                        model.toggleTrackEditor(row: row)
+                    }
+                    .frame(height: max(28, height))
+                }
+            }
+        }
+        .frame(width: 48)
     }
 
     private var header: some View {
@@ -372,6 +443,35 @@ private enum PadState: Equatable {
     case globalScene(occupied: Bool, active: Bool, confirming: Bool)
     case lockTrail(hue: Double, endpoint: Bool, shifted: Bool)
     case editorInactive
+}
+
+private struct SurfaceButton: View {
+    let label: String
+    let color: Color
+    let active: Bool
+    var enabled = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: 9)
+                .fill(color.opacity(active ? 0.9 : (enabled ? 0.22 : 0.07)))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 9)
+                        .stroke(color.opacity(active ? 1 : 0.35), lineWidth: active ? 2 : 1)
+                }
+                .overlay {
+                    Text(label)
+                        .font(.system(size: 9, weight: .black, design: .monospaced))
+                        .foregroundStyle(Color.white.opacity(enabled ? 0.92 : 0.25))
+                }
+                .shadow(color: active ? color.opacity(0.8) : .clear, radius: 9)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityLabel(label)
+    }
 }
 
 private struct PadView: View {

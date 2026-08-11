@@ -21,7 +21,26 @@ normally remembered. Do not disable Gatekeeper globally.
 Csound is bundled inside the application. Do not install Csound, Homebrew audio
 packages, or opcode plug-ins separately.
 
-## 2. Controller connection
+## 2. Trackpad control surface
+
+The complete instrument can be operated from the macOS window without a
+Launchpad. The large 8 × 8 matrix mirrors the hardware pads, the eight buttons
+above it mirror the Launchpad's top row, and the coloured T1–T8 buttons at the
+right mirror the track buttons.
+
+- Click a matrix pad for a short press.
+- Click and hold a pad for about half a second for a long press.
+- Use **PROJ**, **SPACE**, **TEXT**, and **SCENE** for the four editing views.
+- Click a coloured T1–T8 button to open or close that track's editor.
+- Click **SHIFT** to latch Shift, click a generator or current endpoint to apply
+  a lock operation, then click **SHIFT** again to unlatch it.
+
+The three controls marked with a dash are reserved. Track buttons are disabled
+while a master, project, global-scene, or Shift view is active. The status line
+below the matrix describes the current gesture. **Remove** deletes the selected
+chain and **Panic** immediately stops all audio and clears return tails.
+
+## 3. Controller connection
 
 ParallelLives selects the non-DAW `LPMiniMK3 MIDI` input and output ports and
 places the controller in Programmer mode. The status area should read
@@ -38,7 +57,7 @@ If the controller is not found:
 ParallelLives restores the controller to Live mode when the application quits
 normally.
 
-## 3. The track matrix
+## 4. The track matrix
 
 The eight physical rows are eight independent tracks. Audio and processor chains
 always travel from left to right and never intersect.
@@ -62,7 +81,7 @@ No fixed processor limit is imposed beyond the seven processor cells available
 on each row. Graph changes use complementary fades and staged processor startup
 to avoid clicks and dropouts.
 
-## 4. Generators and harmonic relationships
+## 5. Generators and harmonic relationships
 
 Each new root track selects one of twenty synthesis families. The palette
 includes granular, spectral, stochastic, feedback, pulsar, FM, wave-terrain,
@@ -77,7 +96,7 @@ Generators created afterward use related just-intonation fundamentals in a
 curated low register. The relationship affects pitched sources and
 frequency-aware processors without forcing the music into a melodic sequencer.
 
-## 5. Shift and locks
+## 6. Shift and locks
 
 The rightmost top button, Programmer address 98, is **Shift**.
 
@@ -104,7 +123,7 @@ After clearing the track, recreate it at the locked endpoint to restore the exac
 prefix, or choose a farther endpoint to restore the prefix and generate a new
 suffix.
 
-## 6. Track editor
+## 7. Track editor
 
 Short-press the right-side button beside a track to open its editor. The side
 button uses the same fixed colour as that track.
@@ -148,7 +167,7 @@ A track scene stores that row's graph, locks, mixer values, sends, gate, and
 harmonic context. Track scenes are included when their containing project is
 saved.
 
-## 7. Projects
+## 8. Projects
 
 Short-press the first top button from the left, address 91, to open Projects.
 The lower four rows contain 32 persistent project slots, numbered from the
@@ -170,7 +189,7 @@ effects. Project data is stored at:
 
 The historical directory name is retained for compatibility.
 
-## 8. Global scenes
+## 9. Global scenes
 
 Short-press the fourth top button, address 94. The lower four rows contain 32
 global scenes belonging to the active project.
@@ -185,7 +204,7 @@ project immediately without replacing the project's main recall snapshot.
 If no project is active, global scenes remain available during the session; save
 a project to retain them after quitting.
 
-## 9. Reverb and delay editor
+## 10. Reverb and delay editor
 
 Short-press the second top button, address 92. All rows are 32-position unipolar
 sliders.
@@ -199,7 +218,7 @@ Track sends feed shared persistent returns. Clearing a track removes its new
 input but does not cut existing reverb or delay tails. At high Size and Decay,
 the reverb becomes a deliberately massive ambient instrument.
 
-## 10. Saturation and decimation editor
+## 11. Saturation and decimation editor
 
 Short-press the third top button, address 93.
 
@@ -212,7 +231,7 @@ These are shared returns controlled by each track's sends. The decimator uses
 audio-rate sample-and-hold clocks; Jitter destabilizes them independently across
 the stereo field.
 
-## 11. Panic, quitting, and audio safety
+## 12. Panic, quitting, and audio safety
 
 Use **Panic** in the macOS window to stop all tracks and clear master-return
 memory. Quitting ParallelLives also stops the embedded Csound engine and restores
@@ -222,7 +241,7 @@ If audio continues after closing the window, quit ParallelLives from the Dock or
 app switcher. The release runs Csound in-process and does not intentionally leave
 a command-line Csound child process behind.
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### No sound
 

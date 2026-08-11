@@ -20,7 +20,8 @@ Requirements:
 
 - Apple Silicon Mac
 - macOS 14 Sonoma or newer
-- Novation Launchpad Mini Mk3 recommended; trackpad operation is also available
+- Novation Launchpad Mini Mk3 recommended; the complete control surface is also
+  operable with a trackpad
 
 See the [User Guide](Docs/UserGuide.md) for installation, controller mappings,
 projects, scenes, locks, effects, and troubleshooting.

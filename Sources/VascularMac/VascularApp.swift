@@ -26,7 +26,7 @@ struct VascularApp: App {
     var body: some Scene {
         WindowGroup {
             MatrixView(model: model)
-                .frame(minWidth: 760, minHeight: 820)
+                .frame(minWidth: 720, minHeight: 680)
                 .onAppear { appDelegate.model = model }
         }
         .windowStyle(.hiddenTitleBar)

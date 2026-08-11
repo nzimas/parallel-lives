@@ -112,6 +112,17 @@ final class InstrumentModel: ObservableObject {
 
     func tap(_ pad: PadCoordinate) {
         defer { renderController() }
+        if shiftHeld {
+            awakenedPad = nil
+            if pad.column == 0 {
+                toggleGeneratorLock(row: pad.row)
+            } else if currentTrackEndpoint(row: pad.row) == pad {
+                toggleChainLock(row: pad.row, endpoint: pad)
+            } else {
+                status = "SHIFT · SELECT A GENERATOR OR CURRENT ENDPOINT"
+            }
+            return
+        }
         if destructiveEffectsViewOpen {
             adjustDestructiveEffects(with: pad)
             return
@@ -272,7 +283,34 @@ final class InstrumentModel: ObservableObject {
         renderController()
     }
 
+    func toggleTrackEditor(row: Int) {
+        guard (0..<PadCoordinate.matrixSize).contains(row),
+              !projectViewOpen,
+              !globalSceneViewOpen,
+              !masterEffectsViewOpen,
+              !destructiveEffectsViewOpen,
+              !shiftHeld else { return }
+        longPressTask?.cancel()
+        scenePressTimes.removeAll()
+        launchpadSource = nil
+        launchpadPadsDown.removeAll()
+        awakenedPad = nil
+        if editingTrack == row {
+            editingTrack = nil
+            status = "TRACK MATRIX"
+        } else {
+            editingTrack = row
+            status = mixerStatus(for: row)
+        }
+        renderController()
+    }
+
+    func toggleShiftLatch() {
+        setShiftHeld(!shiftHeld)
+    }
+
     func toggleProjectView() {
+        shiftHeld = false
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -290,6 +328,7 @@ final class InstrumentModel: ObservableObject {
     }
 
     func toggleMasterEffectsView() {
+        shiftHeld = false
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -309,6 +348,7 @@ final class InstrumentModel: ObservableObject {
     }
 
     func toggleDestructiveEffectsView() {
+        shiftHeld = false
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -328,6 +368,7 @@ final class InstrumentModel: ObservableObject {
     }
 
     func toggleGlobalSceneView() {
+        shiftHeld = false
         longPressTask?.cancel()
         scenePressTimes.removeAll()
         projectSlotPressTimes.removeAll()
@@ -535,22 +576,19 @@ final class InstrumentModel: ObservableObject {
         case .auxiliaryReleased(let row):
             guard let start = auxiliaryPressTimes.removeValue(forKey: row),
                   start.duration(to: .now) < .milliseconds(480) else { return }
-            longPressTask?.cancel()
-            scenePressTimes.removeAll()
-            launchpadSource = nil
-            launchpadPadsDown.removeAll()
-            awakenedPad = nil
-            if editingTrack == row {
-                editingTrack = nil
-                status = "TRACK MATRIX"
-            } else {
-                editingTrack = row
-                status = mixerStatus(for: row)
-            }
-            renderController()
+            toggleTrackEditor(row: row)
 
         case .shiftPressed:
-            shiftHeld = true
+            setShiftHeld(true)
+
+        case .shiftReleased:
+            setShiftHeld(false)
+        }
+    }
+
+    private func setShiftHeld(_ held: Bool) {
+        shiftHeld = held
+        if held {
             projectViewOpen = false
             masterEffectsViewOpen = false
             destructiveEffectsViewOpen = false
@@ -564,12 +602,10 @@ final class InstrumentModel: ObservableObject {
             launchpadPadsDown.removeAll()
             awakenedPad = nil
             status = "SHIFT · SELECT A GENERATOR OR CURRENT ENDPOINT"
-            renderController()
-
-        case .shiftReleased:
-            shiftHeld = false
-            renderController()
+        } else if status.hasPrefix("SHIFT · SELECT") {
+            status = "TRACK MATRIX"
         }
+        renderController()
     }
 
     private func toggleGeneratorLock(row: Int) {
