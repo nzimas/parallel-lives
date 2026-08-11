@@ -48,6 +48,7 @@ actor CsoundProcessEngine: AudioEngine {
     // live routing architecture; parallelism will return with isolated engines.
     private let renderThreadCount = 1
     private let zakBusCapacity = 256
+    private let initialTerminalWarmup = 0.02
     private let terminalWarmup = 0.26
     private let retiredGraphDelay = 0.64
     private var trackVolumes = Array(repeating: TrackMixer.defaultVolume, count: 8)
@@ -125,11 +126,14 @@ actor CsoundProcessEngine: AudioEngine {
                current.track == track {
                 continue
             }
+            let outputWarmup = outputStates[rootID] == nil
+                ? initialTerminalWarmup
+                : terminalWarmup
             let newOutput = try activateOutput(
                 bus: terminalBus,
                 track: track,
                 gain: 0.48,
-                after: terminalWarmup
+                after: outputWarmup
             )
             if let current = outputStates[rootID] {
                 try? stop(current.voice, after: terminalWarmup)

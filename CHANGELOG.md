@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 — 2026-08-11
+
+- Guaranteed an immediate onset excitation for sparse stochastic, Karplus–Strong,
+  and struck physical-model sources
+- Preserved each model's irregular clock after the one-time onset
+- Reduced terminal warm-up for newly created tracks from 260 ms to 20 ms while
+  retaining the longer click-safe handoff for chain edits
+- Added physical-source onset regression measurements to the transition audit
+
 ## 0.1.1 — 2026-08-11
 
 - Added the complete trackpad-operated control surface

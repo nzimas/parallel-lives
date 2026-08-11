@@ -180,9 +180,11 @@ try:
     current_source = "100.000000020"
     current_scene_processors = []
     source_family_windows = []
+    source_onset_windows = []
     for family in range(20):
         switch_time = 41.0 + family * 1.5
         source_family_windows.append((family, switch_time + 0.35, switch_time + 1.35))
+        source_onset_windows.append((family, switch_time + 0.28, switch_time + 0.55))
         source_voice = f"100.{300 + family:09d}"
         source_output = f"800.{300 + family:09d}"
         bus_bank = family % 2
@@ -255,6 +257,12 @@ try:
         family_rms = math.sqrt(sum(value * value for value in window) / len(window))
         family_rms_values.append(family_rms)
         print(f"source_family={family} rms={family_rms:.6f}")
+    onset_rms_values = []
+    for family, start_time, end_time in source_onset_windows:
+        window = samples[int(start_time * sample_rate):int(end_time * sample_rate)]
+        onset_rms = math.sqrt(sum(value * value for value in window) / len(window))
+        onset_rms_values.append(onset_rms)
+        print(f"source_onset_family={family} rms={onset_rms:.6f}")
     for transition in transition_times:
         start = int((transition - 0.15) * sample_rate)
         end = int((transition + 1.25) * sample_rate)
@@ -275,6 +283,13 @@ try:
         if family_rms <= 0.000001:
             raise RuntimeError(
                 f"source family {family} was silent in a realistic chain: rms={family_rms:.6f}"
+            )
+    sparse_physical_families = (3, 12, 13, 14, 15, 18, 19)
+    for family in sparse_physical_families:
+        if onset_rms_values[family] <= 0.00001:
+            raise RuntimeError(
+                f"physical source family {family} missed its onset window: "
+                f"rms={onset_rms_values[family]:.6f}"
             )
 finally:
     lib.csoundStop(csound)

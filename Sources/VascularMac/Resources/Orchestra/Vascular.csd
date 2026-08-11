@@ -121,6 +121,14 @@ opcode VascularSource, a, iiiiii
     kPhase randomi 0, 1, 0.4 + (iDepth * 3)
     aNoise pinkish 0.16
     aDust dust2 0.24, 2 + (iDepth * 52)
+    ; Sparse stochastic clocks do not guarantee an event near instrument start.
+    ; This short, seeded-noise onset wakes impact and waveguide models
+    ; immediately, then disappears before their irregular clocks take over.
+    ; Its low sustain crosses the graph's click-safe fade without imposing a
+    ; recurring beat or changing the model's long-term behaviour.
+    aOnsetNoise rand 1
+    aOnsetEnvelope linseg 1, 0.018, 0.2, 0.19, 0.13, 0.12, 0
+    aOnsetExcitation = aOnsetNoise * aOnsetEnvelope
 
     if iFamily == 0 then
         aSource grain3 iBase * iRatioA, kPhase, \
@@ -139,10 +147,11 @@ opcode VascularSource, a, iiiiii
         aR4 poscil 0.024 * (0.4 + kR1 * 0.6), iBase * iRatioB, giSine
         aSource = aR1 + aR2 + aR3 + aR4
     elseif iFamily == 2 then
-        aR1 mode aDust, iBase, 35 + iBrightness * 45
-        aR2 mode aDust, iBase * iRatioB, 70 + iTimbreCharacter * 90
-        aR3 mode aDust, iBase * (iRatioB + 5), 130 + iDensityCharacter * 150
-        aSource = (aDust * 0.25) + ((aR1 + aR2 + aR3) * 0.72)
+        aModalExcitation = aDust + (aOnsetExcitation * 0.34)
+        aR1 mode aModalExcitation, iBase, 35 + iBrightness * 45
+        aR2 mode aModalExcitation, iBase * iRatioB, 70 + iTimbreCharacter * 90
+        aR3 mode aModalExcitation, iBase * (iRatioB + 5), 130 + iDensityCharacter * 150
+        aSource = (aModalExcitation * 0.25) + ((aR1 + aR2 + aR3) * 0.72)
     elseif iFamily == 3 then
         iFundamental = iBase
         ; A Poisson-like strike clock keeps the waveguide alive without imposing
@@ -152,7 +161,7 @@ opcode VascularSource, a, iiiiii
             0.08 + iDepth * (0.22 + iTimbreCharacter * 0.52)
         aStrike dust2 1.08, kStrikeDensity
         aStrikeColour rand 0.65
-        aExcitation = aStrike * (1 + aStrikeColour)
+        aExcitation = (aStrike * (1 + aStrikeColour)) + (aOnsetExcitation * 0.76)
         aBuffer delayr 0.08
         aString deltapi 1 / iFundamental
         aDamped tone aString, 1500 + iBrightness * 7200 + iDepth * 4300
@@ -218,7 +227,7 @@ opcode VascularSource, a, iiiiii
             0.09 + iTimbreCharacter * 0.43
         aKSTrigger dust2 0.82, kKSRate
         aKSNoise rand 0.72
-        aKSExcite = aKSTrigger * aKSNoise
+        aKSExcite = (aKSTrigger * aKSNoise) + (aOnsetExcitation * 0.74)
         aKSBuffer1 delayr 0.09
         aKSTap1 deltapi 1 / iBase
         aKSDamp1 tone aKSTap1, 2600 + iBrightness * 9300
@@ -238,7 +247,7 @@ opcode VascularSource, a, iiiiii
         kPrepRate randomh 0.12, 2.2 + iDepth * 3.8, 0.13 + iDensityCharacter * 0.51
         aPrepHit dust2 0.72, kPrepRate
         aPrepNoise rand 0.58
-        aPrepExcite = aPrepHit * aPrepNoise
+        aPrepExcite = (aPrepHit * aPrepNoise) + (aOnsetExcitation * 0.66)
         aPrepBuffer delayr 0.09
         aPrepString deltapi 1 / iBase
         aPrepDamp tone aPrepString, 1850 + iBrightness * 7900
@@ -253,7 +262,7 @@ opcode VascularSource, a, iiiiii
         kPlateRate randomh 0.08, 1.25 + iDepth * 2.4, 0.17 + iTimbreCharacter * 0.62
         aPlateHit dust2 0.65, kPlateRate
         aPlateNoise rand 0.68
-        aPlateExcite = aPlateHit * aPlateNoise
+        aPlateExcite = (aPlateHit * aPlateNoise) + (aOnsetExcitation * 0.7)
         aPlate1 mode aPlateExcite, iBase, 180 + iDepth * 520
         aPlate2 mode aPlateExcite, iBase * 1.593, 240 + iDepth * 760
         aPlate3 mode aPlateExcite, iBase * 2.136, 310 + iDepth * 980
@@ -268,7 +277,7 @@ opcode VascularSource, a, iiiiii
         kMemRate randomh 0.1, 1.8 + iDepth * 3.1, 0.11 + iDensityCharacter * 0.57
         aMemHit dust2 0.76, kMemRate
         aMemNoise rand 0.54
-        aMemExcite = aMemHit * aMemNoise
+        aMemExcite = (aMemHit * aMemNoise) + (aOnsetExcitation * 0.64)
         aMem1 mode aMemExcite, iBase, 55 + iDepth * 110
         aMem2 mode aMemExcite, iBase * 1.594, 72 + iDepth * 145
         aMem3 mode aMemExcite, iBase * 2.136, 88 + iDepth * 185
@@ -310,7 +319,7 @@ opcode VascularSource, a, iiiiii
         kGlassRate randomh 0.045, 0.7 + iDepth * 1.2, 0.19 + iTimbreCharacter * 0.71
         aGlassHit dust2 0.48, kGlassRate
         aGlassNoise rand 0.42
-        aGlassExcite = aGlassHit * aGlassNoise
+        aGlassExcite = (aGlassHit * aGlassNoise) + (aOnsetExcitation * 0.5)
         aGlass1 mode aGlassExcite, iBase * 2, 420 + iDepth * 1180
         aGlass2 mode aGlassExcite, iBase * 2.756, 560 + iDepth * 1540
         aGlass3 mode aGlassExcite, iBase * 5.404, 710 + iDepth * 2010
@@ -324,7 +333,7 @@ opcode VascularSource, a, iiiiii
         kWoodRate randomh 0.14, 2.5 + iDepth * 4.3, 0.09 + iDensityCharacter * 0.48
         aWoodHit dust2 0.82, kWoodRate
         aWoodNoise rand 0.5
-        aWoodExcite = aWoodHit * aWoodNoise
+        aWoodExcite = (aWoodHit * aWoodNoise) + (aOnsetExcitation * 0.68)
         aWood1 mode aWoodExcite, iBase, 24 + iDepth * 48
         aWood2 mode aWoodExcite, iBase * 1.47, 31 + iDepth * 63
         aWood3 mode aWoodExcite, iBase * 2.09, 42 + iDepth * 82
